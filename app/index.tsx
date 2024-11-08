@@ -1,6 +1,6 @@
 import PersonCard from '@/components/PersonCard';
 import { useEffect, useState } from 'react';
-import { SafeAreaView, ScrollView, Text, View } from 'react-native';
+import { SafeAreaView, ScrollView, Text, TextInput, View } from 'react-native';
 
 interface PsychologistProps {
   psychologistId: number;
@@ -18,6 +18,8 @@ export default function Index() {
   const [psychologistData, setPsychologistData] = useState<PsychologistProps[]>(
     []
   );
+  const [filteredData, setFilteredData] = useState<PsychologistProps[]>([]);
+  const [searchTerm, setSearchTerm] = useState('');
 
   const getAllPsychologists = async () => {
     try {
@@ -31,9 +33,27 @@ export default function Index() {
     }
   };
 
+  const searchForPsychologist = () => {
+    if (searchTerm === '') {
+      setFilteredData(psychologistData);
+    } else {
+      const filtered = psychologistData.filter(
+        (person) =>
+          person.firstName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          person.lastName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          person.headline.toLowerCase().includes(searchTerm.toLowerCase())
+      );
+      setFilteredData(filtered);
+    }
+  };
+
   useEffect(() => {
     getAllPsychologists();
   }, []);
+
+  useEffect(() => {
+    searchForPsychologist();
+  }, [searchTerm, psychologistData]);
 
   return (
     <SafeAreaView
@@ -47,12 +67,40 @@ export default function Index() {
       <ScrollView>
         <Text style={{ fontSize: 23 }}>Våra tillgängliga psykologer</Text>
 
+        <TextInput
+          placeholder="Sök på namn eller titel"
+          value={searchTerm}
+          onChangeText={setSearchTerm}
+          placeholderTextColor={'gray'}
+          style={{
+            marginTop: 15,
+            borderWidth: 1,
+            borderColor: '#131313',
+            padding: 10,
+          }}
+        />
+
         <Text style={{ fontSize: 16, marginTop: 15 }}>
-          Resultat: {psychologistData.length}
+          Resultat: {filteredData.length}
         </Text>
         <View>
-          {psychologistData &&
-            psychologistData.map((members: PsychologistProps) => {
+          {psychologistData.length === 0 || filteredData.length === 0 ? (
+            <View
+              style={{
+                display: 'flex',
+                flexDirection: 'column',
+                justifyContent: 'center',
+                alignItems: 'center',
+                height: '100%',
+                width: '100%',
+              }}
+            >
+              <Text style={{ fontSize: 23, color: '#000' }}>
+                Hittade inga tillgängliga psykologer
+              </Text>
+            </View>
+          ) : (
+            filteredData.map((members: PsychologistProps) => {
               return (
                 <PersonCard
                   key={members.psychologistId}
@@ -62,7 +110,8 @@ export default function Index() {
                   thumbnail={members.thumbnail}
                 />
               );
-            })}
+            })
+          )}
         </View>
       </ScrollView>
     </SafeAreaView>
